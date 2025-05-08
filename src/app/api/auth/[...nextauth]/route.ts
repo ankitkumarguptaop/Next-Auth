@@ -1,31 +1,42 @@
-// app/api/auth/[...nextauth]/route.ts
-import axiosInstance from '@/libs/axios';
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-
-type CustomUser = {
-  id: number;
-  name: string;
-  email: string;
-}|null;
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import axiosInstance from "@/libs/axios";
 
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      async authorize (credentials) {
-        if (credentials?.email === 'test@example.com' && credentials?.password === 'password123') {
-          // Return a user object that matches the expected structure
-          const user = await axiosInstance.post(`/users/signin`, credentials);
-          return user;
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          console.warn("Missing email or password");
+          return null;
         }
 
+        try {
+          const response = await axiosInstance.post("/users/signin", {
+            email: credentials.email,
+            password: credentials.password,
+          });
 
-        return null; // Return null if authentication fails
+          const user = response?.data?.user;
+
+          if (user && user.id && user.email) {
+            return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            };
+          }
+
+          return null;
+        } catch (error) {
+          console.error("Login error:", error);
+          return null;
+        }
       },
     }),
   ],
@@ -33,7 +44,32 @@ const handler = NextAuth({
     strategy: 'jwt',
   },
   pages: {
-    signIn: '/auth/signin',  // Custom sign-in page
+    signIn: "/signin", // this is  custom page in the app
+  },
+  callbacks: {
+    // async jwt({ token, user }) {
+    //   // On first login, 'user' is available
+    //   if (user) {
+    //     token.id = user.id;
+    //     token.email = user.email;
+    //     token.name = user.name;
+    //     // If backend returned an access token
+    //     // if (user.token) {
+    //     //   token.accessToken = user.token;
+    //     // }
+    //   }
+    //   console.log(token , "token");
+    //   return token;
+    // },
+    // async session({ session, token }) {
+    //   console.log('✌️token Sesssion --->', token);
+    //   // Make custom token fields available in client-side session
+    //   session.user.id = token.id;
+    //   session.user.email = token.email;
+    //   session.user.name = token.name;
+    //   session.accessToken = token.accessToken;
+    //   return session;
+    // },
   },
 });
 

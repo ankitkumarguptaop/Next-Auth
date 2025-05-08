@@ -9,12 +9,14 @@ import { signInUser } from '@/features/auth/auth.action';
 import { useAppDispatch } from '@/hooks/usedispatch';
 import { signIn } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import axiosInstance from '@/libs/axios';
 
 
 
 export default function LoginForm() {
 
-    const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch();
+
   const {
     register,
     handleSubmit,
@@ -25,19 +27,27 @@ export default function LoginForm() {
 
   const onSubmit = async (data: LoginSchema) => {
     console.log('Form Data:', data);
-    const res = await signIn('credentials', {
-      email:data.email,
-      password :data.password,
-      redirect: false,
-    });
 
-    if (res?.error) {
-      // setError(res.error);
-      console.log("Error:", res.error); 
-    } else {
-      redirect('/'); // Redirect after successful login
-    }
-  //  dispatch(signInUser(data));
+  //  const res= await signIn('credentials', {
+  //     email:data.email,
+  //     password :data.password,
+  //     redirect: false,
+  //   });
+  
+    const response = await axiosInstance.post("/users/signin", {
+      email: data.email,
+      password: data.password,
+    });
+    console.log(response.data, "response");
+
+    // if (res?.error) {
+    //   // setError(res.error);
+    //   console.log("Error:", res.error); 
+    // } else {
+    //   // dispatch(signInUser(data));
+    //   redirect('/'); // Redirect after successful login
+    // }
+  
   };
 
   return (
